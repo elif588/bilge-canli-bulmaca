@@ -2,12 +2,13 @@ import asyncio
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Set
 
 import edge_tts
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
 from TikTokLive import TikTokLiveClient
 from TikTokLive.events import CommentEvent, GiftEvent, LikeEvent, ConnectEvent, DisconnectEvent
 
@@ -62,7 +63,7 @@ async def broadcast(payload: dict) -> None:
 
 @app.get("/")
 async def root():
-    return {"service": "BILGE Canli Bulmaca", "status": "ok", "websocket": "/ws"}
+    return FileResponse(Path(__file__).with_name("index.html"), media_type="text/html")
 
 
 @app.get("/health")
