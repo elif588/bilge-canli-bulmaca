@@ -1,3 +1,5 @@
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30,<1.0
 TikTokLive>=6.4,<7.0
+piper-tts==1.8.0
+
