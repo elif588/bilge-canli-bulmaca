@@ -80,5 +80,5 @@ ws.onclose=()=>{$("connection").textContent="● BAĞLANTI KOPTU";$("connection"
 ws.onerror=()=>{$("setupStatus").textContent="Sunucuya bağlanılamadı. Adresi ve sunucunun çalıştığını kontrol et."};
 }
 $("connection").onclick=()=>$("setup").style.display="block";$("connectBtn").onclick=connect;$("demoBtn").onclick=demo;$("closeBtn").onclick=()=>$("setup").style.display="none";
-render();demo();
+render();
 </script></body></html>
