@@ -45,21 +45,28 @@ const bank=[
 {cat:"ASTRONOMİ",q:"Güneş sistemindeki en büyük gezegen hangisidir?",a:"JÜPİTER"},
 {cat:"ASTRONOMİ",q:"Dünya kendi ekseni etrafında yaklaşık ne kadar sürede döner?",a:"24 SAAT"},
 {cat:"FEN BİLGİSİ",q:"Işığı renklerine ayırabilen üçgen biçimli cam araca ne denir?",a:"PRİZMA"},
+{cat:"TARİH",q:"İstanbul'un fethi hangi yılda gerçekleşti?",a:"1453"},
 {cat:"COĞRAFYA",q:"Türkiye'nin en yüksek dağı hangisidir?",a:"AĞRI DAĞI"},
+{cat:"TARİH",q:"İstanbul'u fetheden Osmanlı padişahının adı nedir?",a:"FATİH SULTAN MEHMET"},
 {cat:"İNSAN VÜCUDU",q:"Yetişkin bir insanın kalbinde kaç odacık bulunur?",a:"DÖRT"},
 {cat:"FEN BİLGİSİ",q:"Suyun kimyasal formülü nedir?",a:"H2O"},
+{cat:"TARİH",q:"Türkiye Büyük Millet Meclisi hangi yıl açıldı?",a:"1920"},
 {cat:"COĞRAFYA",q:"Yüz ölçümü bakımından dünyanın en büyük okyanusu hangisidir?",a:"PASİFİK OKYANUSU"},
 {cat:"DOĞA",q:"Bitkiler fotosentez sırasında havadan hangi gazı alır?",a:"KARBONDİOKSİT"},
 {cat:"MATEMATİK",q:"Bir üçgenin iç açılarının toplamı kaç derecedir?",a:"180 DERECE"},
 {cat:"ASTRONOMİ",q:"Kutup Yıldızı yaklaşık olarak hangi yönü gösterir?",a:"KUZEY"},
 {cat:"TAKVİM",q:"Şubat ayının 29 gün çektiği yıla ne ad verilir?",a:"ARTIK YIL"},
 {cat:"ZAMAN",q:"Bir asır kaç yıldır?",a:"100 YIL"},
+{cat:"TARİH",q:"Cumhuriyet hangi tarihte ilan edildi?",a:"29 EKİM 1923"},
 {cat:"İNSAN VÜCUDU",q:"Kanda oksijen taşımaya yardımcı olan kırmızı hücrelere ne denir?",a:"ALYUVARLAR"},
+{cat:"TARİH",q:"Malazgirt Savaşı'nı kazanan Selçuklu sultanı kimdir?",a:"ALP ARSLAN"},
 {cat:"COĞRAFYA",q:"Türkiye'nin başkenti neresidir?",a:"ANKARA"},
 {cat:"ASTRONOMİ",q:"Dünya'nın doğal uydusunun adı nedir?",a:"AY"},
 {cat:"ASTRONOMİ",q:"Dünya, Güneş çevresindeki bir turunu yaklaşık kaç günde tamamlar?",a:"365 GÜN"},
 {cat:"DOĞA",q:"Bal üretmesiyle bilinen ve çiçeklerden nektar toplayan böcek hangisidir?",a:"ARI"},
-{cat:"FEN BİLGİSİ",q:"Deniz seviyesinde saf su kaç santigrat derecede kaynar?",a:"100 DERECE"}];
+{cat:"FEN BİLGİSİ",q:"Deniz seviyesinde saf su kaç santigrat derecede kaynar?",a:"100 DERECE"},
+{cat:"TARİH",q:"Mustafa Kemal Atatürk Samsun'a hangi yıl çıktı?",a:"1919"},
+{cat:"TARİH",q:"Çanakkale Deniz Zaferi hangi yıl kazanıldı?",a:"1915"}];
 let idx=0,remaining=45,likes=0,players=new Map(),revealed=new Set(),ws=null,timer=null,reconnectTimer=null,autoConnect=true,roundNo=1,locked=false;
 const $=id=>document.getElementById(id);
 const norm=s=>(s||"").toLocaleUpperCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/İ/g,"I").replace(/ı/g,"I").replace(/[^A-Z0-9 ]/g,"").replace(/\s+/g," ").trim();
