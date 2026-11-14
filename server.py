@@ -4,8 +4,10 @@ import logging
 import os
 from typing import Set
 
+import edge_tts
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, Response
 from TikTokLive import TikTokLiveClient
 from TikTokLive.events import CommentEvent, GiftEvent, LikeEvent, ConnectEvent, DisconnectEvent
 
@@ -13,6 +15,24 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("bilge-live")
 
 app = FastAPI(title="BİLGE Canlı Bulmaca API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://elif588.github.io", "http://localhost", "http://127.0.0.1"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+async def synthesize_turkish(text: str) -> bytes:
+    """Generate natural Turkish speech with Microsoft's female neural voice."""
+    communicate = edge_tts.Communicate(text, "tr-TR-EmelNeural", rate="-5%")
+    audio_chunks = []
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            audio_chunks.append(chunk["data"])
+    if not audio_chunks:
+        raise RuntimeError("The speech service returned no audio")
+    return b"".join(audio_chunks)
 
 # The browser game is hosted on this GitHub Pages origin.
 ALLOWED_ORIGINS = {
@@ -48,6 +68,22 @@ async def root():
 @app.get("/health")
 async def health():
     return JSONResponse({"ok": True, "tiktok_connected": bool(active_client and getattr(active_client, 'connected', False)), "username": active_username})
+
+
+@app.post("/speak")
+async def speak(request: dict):
+    text = str(request.get("text", "")).strip()
+    if not text:
+        return JSONResponse({"error": "Seslendirilecek metin boş."}, status_code=400)
+    if len(text) > 500:
+        return JSONResponse({"error": "Seslendirme metni 500 karakteri aşamaz."}, status_code=413)
+
+    try:
+        audio = await asyncio.wait_for(synthesize_turkish(text), timeout=25)
+        return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
+    except Exception:
+        logger.exception("Turkish neural speech synthesis failed")
+        return JSONResponse({"error": "Türkçe ses üretilemedi. Sunucu loglarını kontrol edin."}, status_code=503)
 
 
 async def start_tiktok(username: str) -> None:
