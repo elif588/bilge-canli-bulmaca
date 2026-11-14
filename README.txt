@@ -32,3 +32,9 @@ TÜRKÇE SES VE OTOMATİK OYUN
 - Sayfa açılınca varsayılan TikTok hesabına bağlanmayı dener; bağlantı koparsa otomatik yeniden bağlanır.
 - Gelen her yorum akışta gösterilir; doğru cevapla eşleşen veya cevabı içeren yorum otomatik puanlanır.
 - Bu doğal konuşmaya yakın yapay zekâ sesidir, gerçek insan kaydı değildir.
+
+TABLETE CHROME'DAN KURULUM
+- Chrome'da https://bilge-canli-bulmaca.onrender.com adresini aç.
+- Sağ üstteki ⋮ menüsünden "Uygulamayı yükle" veya "Ana ekrana ekle" seçeneğine dokun.
+- Ana ekrandaki BİLGE simgesine dokunarak oyunu tam ekran aç.
+- TikTok yorumlarını ve hediyeleri almak için tablet internete bağlı kalmalı ve uygulama açık olmalıdır.

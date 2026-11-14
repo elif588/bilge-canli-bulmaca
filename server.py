@@ -74,6 +74,29 @@ async def root():
     return FileResponse(Path(__file__).with_name("index.html"), media_type="text/html")
 
 
+@app.get("/manifest.webmanifest")
+async def pwa_manifest():
+    return FileResponse(
+        Path(__file__).with_name("manifest.webmanifest"),
+        media_type="application/manifest+json",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/service-worker.js")
+async def pwa_service_worker():
+    return FileResponse(
+        Path(__file__).with_name("service-worker.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/icon.svg")
+async def pwa_icon():
+    return FileResponse(Path(__file__).with_name("icon.svg"), media_type="image/svg+xml")
+
+
 @app.get("/health")
 async def health():
     return JSONResponse({"ok": True, "tiktok_connected": bool(active_client and getattr(active_client, 'connected', False)), "username": active_username})
