@@ -39,7 +39,7 @@ body{background:radial-gradient(ellipse at 50% 27%,#145158 0,#082f38 43%,#021820
 <section class="activity"><div class="activity-head"><span>CANLI ETKİLEŞİMLER</span><span>SON AKTİVİTELER</span></div><div class="feed" id="feed"><div class="feedline">Seyirciler geldiğinde yorumlar burada görünür.</div></div></section>
 <footer class="footer">OTOMATİK BULMACA SİSTEMİ • BİLGE</footer>
 </main>
-<div id="setup"><section class="setup-card"><h2>Yayın bağlantısı</h2><p>Gerçek TikTok yorum, beğeni ve hediyeleri için çalışan bağlantı sunucusu gerekir. Demo modu TikTok'a bağlanmaz.</p><label>TikTok kullanıcı adı (@ olmadan)</label><input id="handle" value="kargamlbb"><label>WebSocket sunucu adresi</label><input id="wsurl" value="wss://bilge-canli-bulmaca-1.onrender.com/ws"><button id="connectBtn">SUNUCUYA BAĞLAN</button><button class="secondary" id="demoBtn">DEMO MODUNDA ÇALIŞTIR</button><button class="secondary" id="closeBtn">KAPAT</button><div class="status" id="setupStatus"></div></section></div>
+<div id="setup"><section class="setup-card"><h2>Yayın bağlantısı</h2><p>Gerçek TikTok yorum, beğeni ve hediyeleri için çalışan bağlantı sunucusu gerekir. Demo modu TikTok'a bağlanmaz.</p><label>TikTok kullanıcı adı (@ olmadan)</label><input id="handle" value="kargamlbb"><label>WebSocket sunucu adresi</label><input id="wsurl" value="wss://bilge-canli-bulmaca.onrender.com/ws"><button id="connectBtn">SUNUCUYA BAĞLAN</button><button class="secondary" id="demoBtn">DEMO MODUNDA ÇALIŞTIR</button><button class="secondary" id="closeBtn">KAPAT</button><div class="status" id="setupStatus"></div></section></div>
 <script>
 const bank=[
 {cat:"ASTRONOMİ",q:"Güneş sistemindeki en büyük gezegen hangisidir?",a:"JÜPİTER"},
@@ -85,5 +85,6 @@ function connect(){autoConnect=true;clearTimeout(reconnectTimer);let url=$("wsur
 $("connection").onclick=()=>$("setup").style.display="block";
 $("connectBtn").onclick=connect;$("demoBtn").onclick=demo;$("closeBtn").onclick=()=>$("setup").style.display="none";
 
+if(location.hostname.endsWith(".onrender.com"))$("wsurl").value="wss://"+location.host+"/ws";
 render();setTimeout(connect,900);
 </script></body></html>

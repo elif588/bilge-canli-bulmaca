@@ -19,7 +19,13 @@ app = FastAPI(title="BİLGE Canlı Bulmaca API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://elif588.github.io", "http://localhost", "http://127.0.0.1"],
+    allow_origins=[
+        "https://elif588.github.io",
+        "https://bilge-canli-bulmaca.onrender.com",
+        "https://bilge-canli-bulmaca-1.onrender.com",
+        "http://localhost",
+        "http://127.0.0.1",
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
@@ -38,6 +44,8 @@ async def synthesize_turkish(text: str) -> bytes:
 # The browser game is hosted on this GitHub Pages origin.
 ALLOWED_ORIGINS = {
     "https://elif588.github.io",
+    "https://bilge-canli-bulmaca.onrender.com",
+    "https://bilge-canli-bulmaca-1.onrender.com",
     "http://localhost",
     "http://127.0.0.1",
 }
