@@ -81,4 +81,43 @@ ws.onerror=()=>{$("setupStatus").textContent="Sunucuya bağlanılamadı. Adresi 
 }
 $("connection").onclick=()=>$("setup").style.display="block";$("connectBtn").onclick=connect;$("demoBtn").onclick=demo;$("closeBtn").onclick=()=>$("setup").style.display="none";
 render();
+</script>
+<div id="bilge-host" style="position:fixed;top:145px;left:50%;transform:translateX(-50%);z-index:9999;width:230px;text-align:center;color:white;font-family:Arial;pointer-events:auto;">
+  <div id="bilge-face" style="width:108px;height:108px;margin:auto;border-radius:50%;background:linear-gradient(145deg,#b9a477,#173e40);border:3px solid #d7c28c;display:flex;align-items:center;justify-content:center;font-size:55px;box-shadow:0 0 25px #69d8c5;">👩🏻</div>
+  <div style="font-size:11px;letter-spacing:4px;margin-top:8px;color:#d9c995;">BİLGE DİYOR Kİ</div>
+  <div id="bilge-speech" style="background:#123b3cdd;padding:10px;border-radius:12px;margin-top:8px;font-size:14px;">Merhaba! Bulmacaya hazır mısınız?</div>
+  <button id="bilge-start" style="margin-top:8px;padding:9px 16px;border:0;border-radius:20px;background:#d9c58c;color:#173536;font-weight:bold;">🔊 SESİ AÇ</button>
+</div>
+
+<script>
+(function(){
+  const speech=document.getElementById("bilge-speech");
+  const start=document.getElementById("bilge-start");
+  const face=document.getElementById("bilge-face");
+  if(!speech || !start) return;
+
+  function speak(text){
+    if(!window.speechSynthesis) {
+      speech.textContent="Bu tarayıcı sesli konuşmayı desteklemiyor.";
+      return;
+    }
+    window.speechSynthesis.cancel();
+    speech.textContent=text;
+    const msg=new SpeechSynthesisUtterance(text);
+    msg.lang="tr-TR";
+    msg.rate=0.92;
+    msg.pitch=1.05;
+    const voices=window.speechSynthesis.getVoices();
+    const turkish=voices.find(v=>v.lang.toLowerCase().startsWith("tr"));
+    if(turkish) msg.voice=turkish;
+    face.style.transform="scale(1.06)";
+    msg.onend=()=>face.style.transform="scale(1)";
+    window.speechSynthesis.speak(msg);
+  }
+
+  start.addEventListener("click",()=>{
+    speak("Merhaba! Ben Bilge. Bugünkü bulmacamıza hoş geldiniz. Bakalım cevabı kim bulacak?");
+    start.textContent="🔊 BİLGE KONUŞUYOR";
+  });
+})();
 </script></body></html>
