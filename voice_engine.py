@@ -108,6 +108,14 @@ class VoiceEngine:
     def _get_exact_duration(self, file_path: Path) -> float:
         """Ses dosyasının son salisesine kadar kesin süresini ölçer (Kesilmeyi %100 önler)."""
         try:
+            from mutagen.mp3 import MP3
+            audio = MP3(str(file_path))
+            if audio.info and audio.info.length:
+                return float(audio.info.length)
+        except Exception:
+            pass
+
+        try:
             import pygame
             if not pygame.mixer.get_init():
                 pygame.mixer.init()
