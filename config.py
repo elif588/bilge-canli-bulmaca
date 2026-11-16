@@ -12,7 +12,7 @@ else:
 
 class Config:
     TIKTOK_USERNAME = os.getenv("TIKTOK_USERNAME", "kargamlbb")
-    SIGN_API_KEY = os.getenv("SIGN_API_KEY", "")
+    SIGN_API_KEY = os.getenv("SIGN_API_KEY", "euler_NmQ2OWM5OTQ4ODA4OGYzOTA0M2Y3NGM0NWNhMWQzNDgxODE5ODViNzkyY2M1ZmFlZjFkN2I2")
     
     # LLM
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").lower()

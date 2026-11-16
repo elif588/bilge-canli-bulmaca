@@ -100,11 +100,18 @@ class TikTokListener:
             self.pending_question_waiters.pop(clean_user, None)
 
     def setup_client(self):
-        sign_key = getattr(Config, "SIGN_API_KEY", "") or ""
-        if sign_key:
-            os.environ["SIGN_API_KEY"] = sign_key
-            WebDefaults.tiktok_sign_api_key = sign_key
+        sign_key = getattr(Config, "SIGN_API_KEY", "") or os.environ.get("SIGN_API_KEY", "") or ""
         self.client = TikTokLiveClient(unique_id=f"@{self.username}")
+        if sign_key:
+            from EulerApiSdk.client import AuthenticatedClient
+            self.client.web.signer._sdk_client = AuthenticatedClient(
+                base_url="https://api.eulerstream.com",
+                token=sign_key,
+                prefix="",
+                auth_header_name="X-Api-Key",
+                headers={"User-Agent": "TikTokLive.py/7.0.1"},
+                verify_ssl=False
+            )
 
         @self.client.on(ConnectEvent)
         async def on_connect(event: ConnectEvent):
