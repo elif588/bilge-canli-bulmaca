@@ -12,6 +12,7 @@ else:
 
 class Config:
     TIKTOK_USERNAME = os.getenv("TIKTOK_USERNAME", "kargamlbb")
+    SIGN_API_KEY = os.getenv("SIGN_API_KEY", "")
     
     # LLM
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini").lower()
@@ -27,8 +28,8 @@ class Config:
     # Queue & Priority
     GIFT_PRIORITY_ENABLED = os.getenv("GIFT_PRIORITY_ENABLED", "true").lower() == "true"
     MIN_GIFT_COINS = int(os.getenv("MIN_GIFT_COINS", "1"))
-    FREE_READING_INTERVAL = int(os.getenv("FREE_READING_INTERVAL", "10"))
-    USER_COOLDOWN_SECONDS = int(os.getenv("USER_COOLDOWN_SECONDS", "120"))
+    FREE_READING_INTERVAL = int(os.getenv("FREE_READING_INTERVAL", "60"))
+    USER_COOLDOWN_SECONDS = int(os.getenv("USER_COOLDOWN_SECONDS", "90"))
     
     # Server
     SERVER_HOST = "0.0.0.0"

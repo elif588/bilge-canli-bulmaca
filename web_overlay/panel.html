@@ -184,6 +184,7 @@
       <div class="card">
         <div class="card-title">Kuyrukta Bekleyenler</div>
         <div class="card-value" id="queueCount">0 Kişi</div>
+        <div style="font-size: 11px; color: #a491c3; margin-top: 4px;" id="queueDetail">🎁 0 Hediye | 💬 0 Chat (60 sn bekleme)</div>
       </div>
       <div class="card">
         <div class="card-title">Şu An Masadaki İzleyici</div>
@@ -365,14 +366,21 @@
         
         document.getElementById('tiktokTarget').textContent = `@${data.tiktok_user || 'tanımsız'}`;
         document.getElementById('queueCount').textContent = `${data.queue_size || 0} Kişi`;
+        if (data.gift_queue_size !== undefined) {
+          document.getElementById('queueDetail').textContent = `🎁 ${data.gift_queue_size} VIP Hediye | 💬 ${data.chat_queue_size} Chat (60 sn bekleme)`;
+        }
         document.getElementById('activeUser').textContent = data.active_user ? `@${data.active_user}` : 'Beklemede...';
         
         const stateEl = document.getElementById('tiktokState');
         const badgeEl = document.getElementById('statusBadge');
-        if (data.tiktok_connected) {
-          stateEl.textContent = '🟢 Canlı Yayın Dinleniyor';
+        if (data.tiktok_ws_connected) {
+          stateEl.textContent = `🟢 Yayına Bağlı (Oda: ${data.tiktok_room_id || 'Aktif'})`;
           badgeEl.className = 'badge-status status-connected';
-          badgeEl.textContent = 'CANLI DİNLENİYOR';
+          badgeEl.textContent = 'CANLI YAYINDA';
+        } else if (data.tiktok_connected) {
+          stateEl.textContent = '🟡 Dinleniyor / Yayın Kontrol Ediliyor';
+          badgeEl.className = 'badge-status';
+          badgeEl.textContent = 'YAYIN ARANIYOR';
         } else {
           stateEl.textContent = '⚪ Beklemede';
           badgeEl.className = 'badge-status';

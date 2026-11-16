@@ -1,7 +1,9 @@
+import os
 import time
 import asyncio
 from typing import Optional, Dict
 from TikTokLive import TikTokLiveClient
+from TikTokLive.client.web.web_settings import WebDefaults
 from TikTokLive.events import CommentEvent, GiftEvent, ConnectEvent, DisconnectEvent
 from queue_manager import (
     QueueManager, TIER_FREE, TIER_BENI_SEV, TIER_DONAT, TIER_CAY,
@@ -18,8 +20,8 @@ META_PHRASES = [
 ]
 
 def is_valid_tarot_question(text: str) -> bool:
-    """Yorumun gerçek bir niyet veya tarot sorusu olup olmadığını denetler (Sitemleri ve cinselliği eler)."""
-    if not text or len(text.strip()) < 4:
+    """Yorumun gerçek bir niyet veya tarot sorusu olup olmadığını denetler."""
+    if not text or len(text.strip()) < 2:
         return False
 
     # 1. Cinsellik içeren sorular kesinlikle elenir ve yanıtlanmaz!
@@ -28,25 +30,17 @@ def is_valid_tarot_question(text: str) -> bool:
 
     lower = text.lower().strip()
     
-    # 2. Sadece sitem, sabırsızlık veya hediye bildirimi ise GERÇEK SORU DEĞİLDİR
-    for phrase in META_PHRASES:
-        if phrase in lower and not any(w in lower for w in [
-            "dön", "sev", "ara", "yaz", "evli", "barış", "aldat", "akrep", "terazi", "koç",
-            "boğa", "ikizler", "yengeç", "aslan", "başak", "yay", "oğlak", "kova", "balık", "199", "200"
-        ]):
-            return False
-            
-    tarot_triggers = [
-        "mi", "mı", "mu", "mü", "?", "niyet", "niyetim", "niyetlendim", "dönecek", "döner",
-        "seviyor", "sever", "barış", "barışma", "evlilik", "aldat", "aldatma",
-        "aklındaki", "aklımda", "kalbinde", "arayacak", "arar", "yazacak", "yazar",
-        "mesaj", "adım", "özlüyor", "özler", "pişman", "hissediyor", "düşünüyor",
-        "neler", "ne olacak", "ne zaman", "nasıl", "ilişki", "durumumuz",
-        "kariyer", "para", "iş", "sınav", "kavga", "ayrılık", "hakkında", "hakkımda",
-        "engel", "kader", "kısmet", "şans", "enerji", "fal", "tarot",
-        "akrep", "terazi", "koç", "boğa", "ikizler", "yengeç", "aslan", "başak", "yay", "oğlak", "kova", "balık"
+    # 2. Sadece sitem, sabırsızlık veya takip/beğeni bildirimi ise ele
+    only_sitem = [
+        "sıra", "sıradayım", "baksana", "neden bakmıyorsun", "cevap ver",
+        "bekliyorum", "görmüyorsun", "takip ettim", "beğendim", "gül attım",
+        "donat attım", "ses yok", "açılmadı", "la baksana", "bana bak", "neredesin"
     ]
-    return any(trig in lower for trig in tarot_triggers)
+    if lower in only_sitem:
+        return False
+
+    # 3. İzleyicinin chat'e yazdığı her türlü niyet, soru, isim veya merak konusu kabul edilir
+    return True
 
 class TikTokListener:
     def __init__(self, username: str, queue_manager: QueueManager):
@@ -106,6 +100,10 @@ class TikTokListener:
             self.pending_question_waiters.pop(clean_user, None)
 
     def setup_client(self):
+        sign_key = getattr(Config, "SIGN_API_KEY", "") or ""
+        if sign_key:
+            os.environ["SIGN_API_KEY"] = sign_key
+            WebDefaults.tiktok_sign_api_key = sign_key
         self.client = TikTokLiveClient(unique_id=f"@{self.username}")
 
         @self.client.on(ConnectEvent)
@@ -226,15 +224,28 @@ class TikTokListener:
         while self.is_running:
             self.setup_client()
             try:
+                # 1. Önce canlı yayında olup olmadığını kontrol et (İmza kotasını boş yere tüketmez)
+                is_live = await self.client.is_live()
+                if not is_live:
+                    print(f"[TikTokLive] @{self.username} henüz yayında değil. 15 saniye sonra kontrol edilecek...")
+                    try:
+                        await asyncio.sleep(15)
+                    except asyncio.CancelledError:
+                        break
+                    continue
+
                 print(f"[TikTokLive] @{self.username} canlı yayını dinleniyor...")
                 await self.client.start()
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                print(f"[TikTokLive] @{self.username} yayın durumu: {e}")
-                print(f"[TikTokLive] 6 saniye sonra otomatik tekrar bağlanılacak...")
+                err_msg = str(e)
+                print(f"[TikTokLive] @{self.username} bağlantı durumu: {err_msg}")
+                # EulerStream veya ağ kotası uyarısı varsa 30 saniye sakin bekle
+                sleep_sec = 30 if "rate_limit" in err_msg.lower() else 10
+                print(f"[TikTokLive] {sleep_sec} saniye sonra otomatik tekrar bağlanılacak...")
                 try:
-                    await asyncio.sleep(6)
+                    await asyncio.sleep(sleep_sec)
                 except asyncio.CancelledError:
                     break
 

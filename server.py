@@ -38,6 +38,7 @@ class OverlayServer:
         self.app.router.add_post("/api/test_comment", self.api_test_comment)
         self.app.router.add_post("/api/test_gift", self.api_test_gift)
         self.app.router.add_post("/api/set_voice_provider", self.api_set_voice_provider)
+        self.app.router.add_post("/api/set_sign_key", self.api_set_sign_key)
         self.app.router.add_post("/api/update_tiktok_user", self.api_update_tiktok_user)
         self.app.router.add_post("/api/toggle_tiktok", self.api_toggle_tiktok)
         
@@ -56,17 +57,36 @@ class OverlayServer:
         
         local_ip = get_local_ip()
         pub_url = getattr(self.orchestrator, 'public_url', None)
+        ws_connected = bool(self.orchestrator.tiktok.client and getattr(self.orchestrator.tiktok.client, "connected", False))
+        room_id = getattr(self.orchestrator.tiktok.client, "room_id", None)
+        
         return web.json_response({
             "status": "running" if self.orchestrator.is_running else "stopped",
             "tiktok_user": Config.TIKTOK_USERNAME,
             "tiktok_connected": self.orchestrator.tiktok.is_running,
+            "tiktok_ws_connected": ws_connected,
+            "tiktok_room_id": str(room_id) if room_id else None,
             "voice_provider": Config.TTS_PROVIDER,
             "queue_size": self.orchestrator.queue_mgr.get_queue_size(),
+            "gift_queue_size": self.orchestrator.queue_mgr.gift_queue.qsize(),
+            "chat_queue_size": self.orchestrator.queue_mgr.chat_queue.qsize(),
             "active_user": self.orchestrator.queue_mgr.current_reading.username if self.orchestrator.queue_mgr.current_reading else None,
             "local_ip": local_ip,
             "local_mobile_url": f"http://{local_ip}:{Config.SERVER_PORT}/index.html",
             "public_mobile_url": f"{pub_url}/index.html" if pub_url else None
         })
+
+    async def api_set_sign_key(self, request):
+        try:
+            data = await request.json()
+            key = data.get("key", "").strip()
+            Config.SIGN_API_KEY = key
+            if self.orchestrator:
+                await self.orchestrator.tiktok.stop()
+                asyncio.create_task(self.orchestrator.tiktok.start())
+            return web.json_response({"success": True})
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=400)
 
     async def api_set_voice_provider(self, request):
         try:

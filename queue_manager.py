@@ -92,7 +92,13 @@ class ReadingRequest:
 
 class QueueManager:
     def __init__(self):
-        self.queue: asyncio.PriorityQueue[ReadingRequest] = asyncio.PriorityQueue()
+        # 1. Hediye atanlar için öncelikli kuyruk (VIP 0-5 öncelik)
+        self.gift_queue: asyncio.PriorityQueue[ReadingRequest] = asyncio.PriorityQueue()
+        # 2. Chatten yazan ücretsiz izleyiciler için kuyruk (FIFO)
+        self.chat_queue: asyncio.Queue[ReadingRequest] = asyncio.Queue()
+        self.last_free_reading_time: float = 0.0          # Son ücretsiz chat bakımının bittiği an
+        self.FREE_COOLDOWN_SECONDS: float = 60.0          # Hediye yokken 60 saniyede bir chat yorumu bakılır
+        
         self.active_users: Set[str] = set()               # Kuyrukta veya şu an masada olan kullanıcılar
         self.user_last_reading: Dict[str, float] = {}     # Kullanıcının son bakım zamanı
         self.recent_questions: List[str] = []            # Son okunan/kuyruğa alınan sorular (spam engelleme)
@@ -137,10 +143,10 @@ class QueueManager:
             if tier == TIER_FREE:
                 return False
 
-        # 2. Ücretsiz izleyici spam ve bekleme süresi koruması (120 saniye / 2 dakika)
+        # 2. Ücretsiz izleyici spam koruması (Aynı kullanıcı 90 saniye içinde tekrar ücretsiz eklenemez)
         if tier == TIER_FREE:
             last = self.user_last_reading.get(u_key, 0)
-            if now - last < 120:
+            if now - last < 90:
                 return False
 
             # 3. Aynı sorunun ardı ardına tekrar eklenmesini önle
@@ -169,21 +175,93 @@ class QueueManager:
             if len(self.recent_questions) > 40:
                 self.recent_questions.pop(0)
 
-        await self.queue.put(item)
+        # Hediyeler doğrudan VIP öncelik kuyruğuna, ücretsiz yorumlar chat kuyruğuna aktarılır
+        if tier != TIER_FREE:
+            await self.gift_queue.put(item)
+            print(f"[Kuyruk] 🎁 VIP HEDİYE ÖNCELİKLE EKLENDİ: @{username} ({tier.upper()})")
+        else:
+            await self.chat_queue.put(item)
+            print(f"[Kuyruk] 💬 Chat yorumu kuyruğa alındı: @{username} -> '{question[:30]}'")
+            
         return True
 
     async def get_next(self) -> ReadingRequest:
-        item = await self.queue.get()
-        self.current_reading = item
-        u_key = self._normalize_user(item.username)
-        self.user_last_reading[u_key] = time.time()
-        return item
+        while True:
+            # 1. Hediye atan var mı? Varsa ANINDA çek ve masaya al (Hiç beklemez!)
+            if not self.gift_queue.empty():
+                item = await self.gift_queue.get()
+                self.current_reading = item
+                u_key = self._normalize_user(item.username)
+                self.user_last_reading[u_key] = time.time()
+                return item
+
+            # 2. Hediye yoksa, chat kuyruğunu kontrol et
+            if not self.chat_queue.empty():
+                now = time.time()
+                elapsed = now - self.last_free_reading_time
+                
+                # 60 saniyelik bekleme kuralı:
+                if elapsed < self.FREE_COOLDOWN_SECONDS:
+                    wait_time = self.FREE_COOLDOWN_SECONDS - elapsed
+                    # Bu 60 saniye dolana kadar hediye gelmesini bekle!
+                    try:
+                        item = await asyncio.wait_for(self.gift_queue.get(), timeout=wait_time)
+                        # Hediye geldi! 60s bekleme hemen kesilir ve hediye açılır:
+                        self.current_reading = item
+                        u_key = self._normalize_user(item.username)
+                        self.user_last_reading[u_key] = time.time()
+                        return item
+                    except asyncio.TimeoutError:
+                        # 60 saniye doldu ve hiç hediye gelmedi, sıradaki chat yorumuna geç!
+                        pass
+
+                # 60 saniye tamamlandı: Chat kuyruğundaki ilk yorumu çek
+                # (Eğer tam bu anda hediye geldiyse yine hediyeyi al)
+                if not self.gift_queue.empty():
+                    item = await self.gift_queue.get()
+                else:
+                    item = await self.chat_queue.get()
+                    self.last_free_reading_time = time.time()
+
+                self.current_reading = item
+                u_key = self._normalize_user(item.username)
+                self.user_last_reading[u_key] = time.time()
+                return item
+
+            # 3. İki kuyruk da tamamen boşsa: Hediye VEYA chat yorumu gelene kadar bekle
+            get_gift_task = asyncio.create_task(self.gift_queue.get())
+            get_chat_task = asyncio.create_task(self.chat_queue.get())
+
+            done, pending = await asyncio.wait(
+                [get_gift_task, get_chat_task],
+                return_when=asyncio.FIRST_COMPLETED
+            )
+
+            for t in pending:
+                t.cancel()
+
+            for t in done:
+                item = t.result()
+                if item.tier != TIER_FREE:
+                    # Gelen hediye! Anında masaya al
+                    self.current_reading = item
+                    u_key = self._normalize_user(item.username)
+                    self.user_last_reading[u_key] = time.time()
+                    return item
+                else:
+                    # Gelen ücretsiz chat yorumu: Chat kuyruğuna koyup 60 saniye döngüsüne sok
+                    await self.chat_queue.put(item)
+                    break
 
     def mark_done(self):
         if self.current_reading:
             u_key = self._normalize_user(self.current_reading.username)
             self.active_users.discard(u_key)
             self.user_last_reading[u_key] = time.time()
+            # Ücretsiz chat bakımı bittiğinde 60 saniyelik dinlenme süresi başlar
+            if self.current_reading.tier == TIER_FREE:
+                self.last_free_reading_time = time.time()
+                
             self.recent_history.append({
                 "username": self.current_reading.username,
                 "tier": self.current_reading.tier,
@@ -193,7 +271,6 @@ class QueueManager:
             if len(self.recent_history) > 30:
                 self.recent_history.pop(0)
         self.current_reading = None
-        self.queue.task_done()
 
     def get_queue_size(self) -> int:
-        return self.queue.qsize()
+        return self.gift_queue.qsize() + self.chat_queue.qsize()
