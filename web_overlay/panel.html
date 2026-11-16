@@ -179,7 +179,7 @@
       <div class="card">
         <div class="card-title">TikTok Canlı Hedefi</div>
         <div class="card-value" id="tiktokTarget">@kargamlbb</div>
-        <div style="font-size: 12px; color: #00f5d4; margin-top: 4px;" id="tiktokState">Bağlantı aktif</div>
+        <div style="font-size: 12px; color: #00f5d4; margin-top: 4px;" id="tiktokState">● Canlı Yayın Dinleniyor</div>
       </div>
       <div class="card">
         <div class="card-title">Kuyrukta Bekleyenler</div>
@@ -406,15 +406,18 @@
         const stateEl = document.getElementById('tiktokState');
         const badgeEl = document.getElementById('statusBadge');
         if (data.tiktok_ws_connected) {
-          stateEl.textContent = `🟢 Yayına Bağlı (Oda: ${data.tiktok_room_id || 'Aktif'})`;
+          stateEl.textContent = `🟢 Canlı Yayın Dinleniyor (Oda: ${data.tiktok_room_id || 'Aktif'})`;
+          stateEl.style.color = '#00f5d4';
           badgeEl.className = 'badge-status status-connected';
-          badgeEl.textContent = 'CANLI YAYINDA';
+          badgeEl.textContent = 'CANLI YAYIN DİNLENİYOR';
         } else if (data.tiktok_connected) {
-          stateEl.textContent = '🟡 Dinleniyor / Yayın Kontrol Ediliyor';
+          stateEl.textContent = '🟡 Canlı Yayın Aranıyor / Kontrol Ediliyor';
+          stateEl.style.color = '#ffd700';
           badgeEl.className = 'badge-status';
           badgeEl.textContent = 'YAYIN ARANIYOR';
         } else {
           stateEl.textContent = '⚪ Beklemede';
+          stateEl.style.color = '#a491c3';
           badgeEl.className = 'badge-status';
           badgeEl.textContent = 'HAZIR';
         }
