@@ -1,0 +1,26 @@
+{
+  "name": "Almina Tarot Canlı Yayın",
+  "short_name": "Almina Tarot",
+  "description": "Almina Tarot Canlı Yayın ve Bakım Ekranı",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#020105",
+  "theme_color": "#020105",
+  "icons": [
+    {
+      "src": "images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

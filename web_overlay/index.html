@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Almina Tarot Canlı Yayın</title>
+  
+  <!-- PWA & Mobil Tam Ekran (Saat ve Çubuk Gizleme) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Almina Tarot">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+  <meta name="theme-color" content="#020105">
+
+  <link rel="stylesheet" href="styles.css?v=16">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="stream-container" id="streamContainer">
+    
+    <!-- Mistik Almina Arka Plan Görseli (Doğal İnsan Ritminde Ağız ve Göz Kırpma Animasyonlu) -->
+    <div class="background-stage">
+      <img src="images/almina_bg.jpg" alt="Almina Tarot" id="bgImage" class="bg-image">
+      <img src="images/almina_blink.png" alt="Almina Göz Kırpma" id="bgBlink" class="bg-image bg-talk">
+      <img src="images/almina_talk_mid.png" alt="Almina Konuşma Yarı" id="bgTalkMid" class="bg-image bg-talk">
+      <img src="images/almina_talk_open.png" alt="Almina Konuşma Açık" id="bgTalkOpen" class="bg-image bg-talk">
+      <div class="ambient-vignette"></div>
+    </div>
+
+    <!-- SAĞ DİKEY HEDİYE VE AÇILIM SEÇENEKLERİ GEÇİŞİ (BAN-RİSKSİZ GİFT VİDGETI) -->
+    <div class="vertical-gift-showcase" id="verticalGiftShowcase">
+      <div class="gift-showcase-header">
+        <span class="header-sparkle">✦</span>
+        <span class="header-title">AÇILIMLAR</span>
+        <span class="header-sparkle">✦</span>
+      </div>
+      
+      <div class="gift-tier-list" id="giftTierList">
+        <div class="gift-tier-row active" data-tier="1" data-name="Detaylı Tek Kart">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_1.png" alt="Detaylı Tek Kart" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">1.</span>
+            <span class="gift-name">Detaylı Tek Kart</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+
+        <div class="gift-tier-row" data-tier="2" data-name="3 Kart Açılım">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_2.png" alt="3 Kart Açılım" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">2.</span>
+            <span class="gift-name">3 Kart Açılım</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+
+        <div class="gift-tier-row" data-tier="3" data-name="Aşk Bakım ve Tavsiye">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_3.png" alt="Aşk Bakım ve Tavsiye" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">3.</span>
+            <span class="gift-name">Aşk Bakım ve Tavsiye</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+
+        <div class="gift-tier-row" data-tier="4" data-name="Karışık Bakım">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_4.png" alt="Karışık Bakım" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">4.</span>
+            <span class="gift-name">Karışık Bakım</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+
+        <div class="gift-tier-row" data-tier="5" data-name="Derin Aşk Açılımı">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_5.png" alt="Derin Aşk Açılımı" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">5.</span>
+            <span class="gift-name">Derin Aşk Açılımı</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+
+        <div class="gift-tier-row" data-tier="6" data-name="Kader Açılımı">
+          <div class="gift-icon-container">
+            <img src="images/gifts/gift_6.png" alt="Kader Açılımı" class="gift-img">
+          </div>
+          <div class="gift-title-container">
+            <span class="gift-index">6.</span>
+            <span class="gift-name">Kader Açılımı</span>
+          </div>
+          <div class="row-glow-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ÜST KATMAN: "ŞU AN BAKILIYOR" VE İZLEYİCİ BİLGİSİ -->
+    <div class="overlay-hud">
+      <div class="current-reading-label">Ş U &nbsp; A N &nbsp; B A K I L I Y O R</div>
+      
+      <div class="user-profile-row">
+        <div class="avatar-circle">
+          <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=120&q=80" 
+               alt="User" id="userAvatar" class="avatar-img">
+        </div>
+        <div class="user-meta">
+          <div class="user-name-line">
+            <span class="user-fullname" id="userFullName">Canlı İzleyici</span>
+            <span class="badge-pill" id="badgePill">Detaylı Tek Kart</span>
+          </div>
+          <div class="zodiac-pill-line" id="zodiacPillLine" style="display: none;">
+            <span class="zodiac-badge" id="zodiacBadge">♏ Akrep · ♎ Terazi</span>
+          </div>
+          <div class="user-subquestion" id="userSubquestion">"Detaylı Tek Kart"</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KART KARIŞTIRMA VE AÇILIM BÖLGESİ -->
+    <div class="shuffle-banner" id="shuffleBanner">✦ KARTLAR KARIŞTIRILIYOR... ✦</div>
+
+    <div class="deck-shuffle-box" id="deckShuffleBox">
+      <div class="deck-card deck-c1"><img src="cards/card_back.jpg" alt="Deck 1"></div>
+      <div class="deck-card deck-c2"><img src="cards/card_back.jpg" alt="Deck 2"></div>
+      <div class="deck-card deck-c3"><img src="cards/card_back.jpg" alt="Deck 3"></div>
+    </div>
+
+    <!-- ORTA KATMAN: MASADAKİ GERÇEK RIDER-WAITE TAROT KARTLARI -->
+    <div class="tarot-card-stage" id="cardStage">
+      <!-- Dinamik kartlar buraya 3D flip efektiyle dağıtılacak -->
+    </div>
+
+    <!-- ALT BİLGİ: SADECE TEMİZ VE MİNİMAL CANLI ROZETİ (SAYAÇSIZ) -->
+    <div class="bottom-live-bar">
+      <div class="live-status-pill">
+        <span class="rec-dot"></span>
+        <span class="live-text">CANLI</span>
+      </div>
+    </div>
+
+    <!-- Mistik Seans Fon Müziği (Kısık Sesle Sürekli Çalar) -->
+    <audio id="bgAmbientAudio" loop preload="auto" src="audio/ambient_bg.ogg"></audio>
+
+    <!-- Almina Yorumlama Sesi -->
+    <audio id="ttsAudio" preload="auto"></audio>
+
+  </div>
+
+  <script src="app.js?v=16"></script>
+</body>
+</html>

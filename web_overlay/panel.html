@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Almina Tarot - Canlı Yayın Kontrol Paneli</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #070410;
+      font-family: 'Montserrat', sans-serif;
+      color: #f1e9db;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .panel-container {
+      max-width: 920px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+      padding-bottom: 12px;
+    }
+    h1 {
+      font-size: 22px;
+      color: #ffd700;
+      letter-spacing: 1px;
+    }
+    .badge-status {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+      background: #2a1b4e;
+      border: 1px solid #7b2cbf;
+    }
+    .status-connected {
+      background: #0f3822;
+      border-color: #00f5d4;
+      color: #00f5d4;
+    }
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: #120a24;
+      border: 1px solid rgba(212, 175, 55, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .card-title {
+      font-size: 13px;
+      color: #bfa8e0;
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .card-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .btn-obs { background: linear-gradient(135deg, #ffd700, #d4af37); color: #120924; font-weight: 800; }
+    .btn-normal { background: #1e1338; color: #e2d9f3; border: 1px solid #7209b7; }
+    .btn-tier1 { background: linear-gradient(135deg, #ff70a6, #e71d36); color: #fff; }
+    .btn-tier30 { background: linear-gradient(135deg, #ff9f1c, #d00000); color: #fff; }
+    .btn-tier50 { background: linear-gradient(135deg, #2ec4b6, #011627); color: #fff; border: 1px solid #2ec4b6; }
+    .btn-tier100 { background: linear-gradient(135deg, #7209b7, #3a0ca3); color: #fff; }
+    .btn-tier199 { background: linear-gradient(135deg, #f72585, #b5179e); color: #fff; }
+    .btn-tier699 { background: linear-gradient(135deg, #ffd700, #ff007f); color: #fff; font-weight: 800; }
+
+    .form-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    input {
+      flex: 1;
+      padding: 10px 14px;
+      background: #1a0f30;
+      border: 1px solid #4a287a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input:focus { outline: none; border-color: #ffd700; }
+    .log-box {
+      background: #0b0617;
+      border: 1px solid #2d184f;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      height: 140px;
+      overflow-y: auto;
+      color: #c9b5e8;
+    }
+    .log-entry { margin-bottom: 5px; }
+    .log-time { color: #8874a6; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="panel-container">
+    
+    <header>
+      <div>
+        <h1>🔮 Almina Tarot - Canlı Yayın Kontrol Masası</h1>
+        <p style="font-size: 12px; color: #a491c3; margin-top: 2px;">TikTok İhlal Korumalı & Otomatik Soru Eşleştirmeli Canlı Kontrol Sistemi</p>
+      </div>
+      <div id="statusBadge" class="badge-status">Sistem Hazır</div>
+    </header>
+
+    <!-- Mobil & Tablet Yayın Bağlantıları (Safari & Chrome PWA) -->
+    <div class="card" style="border: 1.5px solid #ffd700; background: linear-gradient(135deg, #180c33, #0b0517);">
+      <div class="card-title" style="color: #ffd700; font-size: 15px;">📱 TELEFON VEYA TABLETTEN YAYIN YAPMA (SAFARI & CHROME)</div>
+      <div style="font-size: 12px; color: #dcd0f0; line-height: 1.5; margin-bottom: 12px;">
+        Telefonunuzun kamerasını açıp aşağıdaki QR kodu okutabilir veya alttaki linklere dokunarak yayını telefon/tablete aktarabilirsiniz:
+      </div>
+      
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+        <!-- QR Code -->
+        <div style="background: #fff; padding: 6px; border-radius: 8px; width: 132px; height: 132px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <img id="qrCodeImg" src="" alt="Yayın QR Kod" style="width: 120px; height: 120px; display: block;">
+        </div>
+
+        <div style="flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 8px;">
+          <div>
+            <div style="font-size: 11px; color: #00f5d4; font-weight: 800; letter-spacing: 0.5px;">🌐 İNTERNET LİNKİ (SAFARI / CHROME UYGULAMA İNDİRME LİNKİ):</div>
+            <a id="publicLink" href="#" target="_blank" style="color: #00f5d4; font-weight: 800; font-size: 14px; word-break: break-all; text-decoration: underline;">Bağlantı alınıyor...</a>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #ffd700; font-weight: 700;">📶 YEREL Wİ-Fİ BAĞLANTISI (AYNI MODEMDE):</div>
+            <a id="localLink" href="#" target="_blank" style="color: #ffd700; font-weight: 700; font-size: 13px; word-break: break-all; text-decoration: underline;">Bağlantı alınıyor...</a>
+          </div>
+          <div style="font-size: 11.5px; color: #e2d9f3; background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 8px; border-left: 3px solid #ffd700; line-height: 1.4;">
+            ✨ <strong>Saat, Pil ve Tarayıcı Çubuklarını Gizleme:</strong><br>
+            • <strong>iPhone / iPad (Safari):</strong> Paylaş (⎋) butonuna basıp <strong>"Ana Ekrana Ekle"</strong> deyin. Uygulama olarak ana ekranınıza iner, saatler ve çubuklar tamamen gizlenir!<br>
+            • <strong>Android (Chrome):</strong> Üç noktaya basıp <strong>"Uygulamayı Yükle / Ana Ekrana Ekle"</strong> deyin.<br>
+            • <strong>Anında Gizleme:</strong> Ekrandaki sağ üstteki <strong>[⛶]</strong> simgesine dokunarak doğrudan tam ekrana geçebilirsiniz.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Durum Kartları -->
+    <div class="status-grid">
+      <div class="card">
+        <div class="card-title">TikTok Canlı Hedefi</div>
+        <div class="card-value" id="tiktokTarget">@kargamlbb</div>
+        <div style="font-size: 12px; color: #00f5d4; margin-top: 4px;" id="tiktokState">Bağlantı aktif</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Kuyrukta Bekleyenler</div>
+        <div class="card-value" id="queueCount">0 Kişi</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Şu An Masadaki İzleyici</div>
+        <div class="card-value" id="activeUser" style="font-size: 18px; color: #ffd700;">Beklemede...</div>
+      </div>
+    </div>
+
+    <!-- Ses Motoru Seçimi -->
+    <div class="card" style="border: 1px solid #00f5d4;">
+      <div class="card-title" style="color: #00f5d4;">🎙️ SES MOTORU & SES KAYNAĞI SEÇİMİ</div>
+      <div style="font-size: 12px; color: #b8a5d4; margin-bottom: 8px;">
+        Hangi sesin çalacağını buradan tek tıkla değiştirebilirsiniz:
+      </div>
+      <div class="btn-row">
+        <button id="btnVoiceVideo" class="btn-obs" onclick="setVoice('video_voice')">⭐ Attığım Videodaki Orijinal Kadın Sesi (Aktif)</button>
+        <button id="btnVoiceEdge" class="btn-normal" onclick="setVoice('edge-tts')">🤖 Edge-TTS (Her Yeni Soruyu Okuyan Yapay Zeka)</button>
+        <button id="btnVoiceEleven" class="btn-normal" onclick="setVoice('elevenlabs')">✨ ElevenLabs (Videodaki Sesin Klonlanmış Hali)</button>
+      </div>
+      <div id="voiceStatusNotice" style="font-size: 11px; color: #ffd700; margin-top: 6px;">
+        Şu an: <strong>Attığınız videodan çıkarılan orijinal gerçek insan sesi çalıyor.</strong>
+      </div>
+    </div>
+
+    <!-- Hediye ve Açılım Test Butonları -->
+    <div class="card">
+      <div class="card-title">🎁 HEDİYE VE KADEME SİMÜLASYONU (TEK TIKLA TEST EDİN)</div>
+      <div style="font-size: 12px; color: #b8a5d4; margin-bottom: 8px;">
+        * Ekranda veya seste hediye ismi ve jeton miktarı ASLA yazmaz/söylenmez (İhlal korumalıdır).
+      </div>
+      <div class="btn-row">
+        <button class="btn-obs" onclick="openOBS()">🖥️ OBS Canlı Yayın Ekranını Aç</button>
+        <button class="btn-tier1" onclick="testCustom('beni_sev')">💖 1. Detaylı Tek Kart</button>
+        <button class="btn-tier30" onclick="testCustom('donat')">🍩 2. 3 Kart Açılım</button>
+        <button class="btn-tier50" onclick="testCustom('cay')">☕ 3. Aşk Bakım ve Tavsiye</button>
+        <button class="btn-tier100" onclick="testCustom('karisik')">🔮 4. Karışık Bakım (5 Kart)</button>
+        <button class="btn-tier199" onclick="testCustom('derin_ask')">💜 5. Derin Aşk Açılımı</button>
+        <button class="btn-tier699" onclick="testCustom('kader')">🦢 6. Kader Açılımı</button>
+      </div>
+    </div>
+
+    <!-- Özel İsim ve Soru Testi -->
+    <div class="card">
+      <div class="card-title">✍️ CHATTEN SORU VE İSİM GİREREK TEST ET</div>
+      <div class="form-group">
+        <input type="text" id="customUser" placeholder="İzleyici Adı (Örn: Beyza)" value="Beyza">
+        <input type="text" id="customQuestion" placeholder="Chatteki Sorusu (Örn: Barışacak mıyız, ne zaman arar?)" value="Barışacak mıyız, ne zaman arar?">
+        <button class="btn-tier50" onclick="testWithCustomForm('cay')">☕ 50 Jetonla Soruya Bak</button>
+        <button class="btn-tier699" onclick="testWithCustomForm('kader')">🌌 699 Jetonla Kadersel Bak</button>
+      </div>
+    </div>
+
+    <!-- TikTok Kullanıcı Adı Ayarı -->
+    <div class="card">
+      <div class="card-title">⚙️ DİNLENECEK TIKTOK HESABI</div>
+      <div class="form-group">
+        <input type="text" id="newTikTokUser" placeholder="Kendi TikTok Kullanıcı Adınız">
+        <button class="btn-normal" onclick="updateTikTokUser()">Hesabı Güncelle</button>
+        <button class="btn-normal" onclick="toggleTikTok()" id="btnToggleLive">🔴 Canlı Dinlemeyi Durdur / Başlat</button>
+      </div>
+    </div>
+
+    <!-- Canlı İşlem Günlüğü -->
+    <div class="card">
+      <div class="card-title">📜 CANLI İŞLEM GÜNLÜĞÜ (LOG)</div>
+      <div class="log-box" id="logBox">
+        <div class="log-entry"><span class="log-time">[Almina]</span> İhlal korumalı sistem hazırlandı.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function log(msg) {
+      const box = document.getElementById('logBox');
+      const time = new Date().toLocaleTimeString();
+      box.innerHTML += `<div class="log-entry"><span class="log-time">[${time}]</span> ${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function openOBS() {
+      window.open('/index.html', '_blank', 'width=576,height=1024');
+    }
+
+    async function testCustom(tier) {
+      log(`🎁 Kademe testi başlatılıyor: ${tier}...`);
+      const res = await fetch('/api/test_gift', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: 'Canli_Izleyici',
+          tier: tier,
+          question: 'Aklımdaki kişi geri dönecek mi?'
+        })
+      });
+      const data = await res.json();
+      log(data.message || 'İstek eklendi.');
+      refreshStatus();
+    }
+
+    async function testWithCustomForm(tier) {
+      const user = document.getElementById('customUser').value.trim() || 'İzleyici';
+      const question = document.getElementById('customQuestion').value.trim() || 'Aşk ve gelecek durumu';
+
+      log(`🎁 @${user} için ${tier} testi başlatılıyor -> Soru: '${question}'`);
+      const res = await fetch('/api/test_gift', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          username: user,
+          tier: tier,
+          question: question
+        })
+      });
+      const data = await res.json();
+      log(data.message || 'Soruyla eşleştirildi.');
+      refreshStatus();
+    }
+
+    async function updateTikTokUser() {
+      const user = document.getElementById('newTikTokUser').value.trim();
+      if (!user) return alert('Lütfen kullanıcı adı girin.');
+
+      log(`⚙️ TikTok hesabı güncelleniyor: @${user}...`);
+      const res = await fetch('/api/update_tiktok_user', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: user })
+      });
+      const data = await res.json();
+      if (data.success) {
+        log(`✅ Hedef hesap @${data.username} olarak ayarlandı.`);
+      } else {
+        log(`❌ Hata: ${data.error}`);
+      }
+      refreshStatus();
+    }
+
+    async function setVoice(provider) {
+      log(`🎙️ Ses motoru değiştiriliyor: ${provider}...`);
+      const res = await fetch('/api/set_voice_provider', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ provider: provider })
+      });
+      const data = await res.json();
+      if (data.success) {
+        log(`✅ Ses motoru aktif: ${data.provider.toUpperCase()}`);
+        const notice = document.getElementById('voiceStatusNotice');
+        if (data.provider === 'video_voice') {
+          notice.innerHTML = 'Şu an: <strong>Attığınız videodan çıkarılan orijinal gerçek insan sesi çalıyor.</strong>';
+          document.getElementById('btnVoiceVideo').className = 'btn-obs';
+          document.getElementById('btnVoiceEdge').className = 'btn-normal';
+          document.getElementById('btnVoiceEleven').className = 'btn-normal';
+        } else if (data.provider === 'edge-tts') {
+          notice.innerHTML = 'Şu an: <strong>Edge-TTS (Her yeni soruyu otomatik üreten yapay zeka sesi) çalıyor.</strong>';
+          document.getElementById('btnVoiceVideo').className = 'btn-normal';
+          document.getElementById('btnVoiceEdge').className = 'btn-obs';
+          document.getElementById('btnVoiceEleven').className = 'btn-normal';
+        } else {
+          notice.innerHTML = 'Şu an: <strong>ElevenLabs (Videodaki sesin klonlanmış hali) aktif.</strong>';
+          document.getElementById('btnVoiceVideo').className = 'btn-normal';
+          document.getElementById('btnVoiceEdge').className = 'btn-normal';
+          document.getElementById('btnVoiceEleven').className = 'btn-obs';
+        }
+      }
+    }
+
+    async function toggleTikTok() {
+      const res = await fetch('/api/toggle_tiktok', { method: 'POST' });
+      const data = await res.json();
+      log(data.message || 'Durum değişti.');
+      refreshStatus();
+    }
+
+    async function refreshStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        
+        document.getElementById('tiktokTarget').textContent = `@${data.tiktok_user || 'tanımsız'}`;
+        document.getElementById('queueCount').textContent = `${data.queue_size || 0} Kişi`;
+        document.getElementById('activeUser').textContent = data.active_user ? `@${data.active_user}` : 'Beklemede...';
+        
+        const stateEl = document.getElementById('tiktokState');
+        const badgeEl = document.getElementById('statusBadge');
+        if (data.tiktok_connected) {
+          stateEl.textContent = '🟢 Canlı Yayın Dinleniyor';
+          badgeEl.className = 'badge-status status-connected';
+          badgeEl.textContent = 'CANLI DİNLENİYOR';
+        } else {
+          stateEl.textContent = '⚪ Beklemede';
+          badgeEl.className = 'badge-status';
+          badgeEl.textContent = 'HAZIR';
+        }
+
+        // Mobil ve PWA Bağlantılarını Güncelle
+        const localA = document.getElementById('localLink');
+        const pubA = document.getElementById('publicLink');
+        const qrImg = document.getElementById('qrCodeImg');
+
+        if (localA && data.local_mobile_url) {
+          localA.href = data.local_mobile_url;
+          localA.textContent = data.local_mobile_url;
+        }
+
+        let bestUrl = data.local_mobile_url;
+        if (pubA) {
+          if (data.public_mobile_url) {
+            pubA.href = data.public_mobile_url;
+            pubA.textContent = data.public_mobile_url;
+            bestUrl = data.public_mobile_url;
+          } else {
+            pubA.textContent = '(Ngrok tüneli bekleniyor...)';
+            pubA.removeAttribute('href');
+          }
+        }
+
+        if (qrImg && bestUrl && qrImg.getAttribute('data-url') !== bestUrl) {
+          qrImg.setAttribute('data-url', bestUrl);
+          qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(bestUrl)}`;
+        }
+      } catch (e) {}
+    }
+
+    setInterval(refreshStatus, 2000);
+    refreshStatus();
+  </script>
+</body>
+</html>

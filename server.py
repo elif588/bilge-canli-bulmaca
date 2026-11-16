@@ -1,231 +1,200 @@
-import asyncio
 import json
-import logging
-import os
+import asyncio
 from pathlib import Path
-from typing import Set
-
-import edge_tts
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, Response
-from TikTokLive import TikTokLiveClient
-from TikTokLive.events import CommentEvent, GiftEvent, LikeEvent, ConnectEvent, DisconnectEvent
-
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-logger = logging.getLogger("bilge-live")
-
-app = FastAPI(title="BİLGE Canlı Bulmaca API", version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://elif588.github.io",
-        "https://bilge-canli-bulmaca.onrender.com",
-        "https://bilge-canli-bulmaca-1.onrender.com",
-        "http://localhost",
-        "http://127.0.0.1",
-    ],
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+from aiohttp import web
+from config import Config
+from queue_manager import (
+    TIER_FREE, TIER_BENI_SEV, TIER_DONAT, TIER_CAY,
+    TIER_KARISIK, TIER_DERIN_ASK, TIER_KADER
 )
 
-async def synthesize_turkish(text: str) -> bytes:
-    """Generate natural Turkish speech with Microsoft's female neural voice."""
-    communicate = edge_tts.Communicate(text, "tr-TR-EmelNeural", rate="-5%")
-    audio_chunks = []
-    async for chunk in communicate.stream():
-        if chunk["type"] == "audio":
-            audio_chunks.append(chunk["data"])
-    if not audio_chunks:
-        raise RuntimeError("The speech service returned no audio")
-    return b"".join(audio_chunks)
-
-# The browser game is hosted on this GitHub Pages origin.
-ALLOWED_ORIGINS = {
-    "https://elif588.github.io",
-    "https://bilge-canli-bulmaca.onrender.com",
-    "https://bilge-canli-bulmaca-1.onrender.com",
-    "http://localhost",
-    "http://127.0.0.1",
-}
-
-connected_sockets: Set[WebSocket] = set()
-active_client = None
-active_username = None
-client_task = None
-client_lock = asyncio.Lock()
-
-
-async def broadcast(payload: dict) -> None:
-    message = json.dumps(payload, ensure_ascii=False)
-    stale = []
-    for socket in list(connected_sockets):
-        try:
-            await socket.send_text(message)
-        except Exception:
-            stale.append(socket)
-    for socket in stale:
-        connected_sockets.discard(socket)
-
-
-@app.get("/")
-async def root():
-    return FileResponse(Path(__file__).with_name("index.html"), media_type="text/html")
-
-
-@app.get("/manifest.webmanifest")
-async def pwa_manifest():
-    return FileResponse(
-        Path(__file__).with_name("manifest.webmanifest"),
-        media_type="application/manifest+json",
-        headers={"Cache-Control": "no-cache"},
-    )
-
-
-@app.get("/service-worker.js")
-async def pwa_service_worker():
-    return FileResponse(
-        Path(__file__).with_name("service-worker.js"),
-        media_type="application/javascript",
-        headers={"Cache-Control": "no-cache"},
-    )
-
-
-@app.get("/icon.svg")
-async def pwa_icon():
-    return FileResponse(Path(__file__).with_name("icon.svg"), media_type="image/svg+xml")
-
-
-@app.get("/health")
-async def health():
-    return JSONResponse({"ok": True, "tiktok_connected": bool(active_client and getattr(active_client, 'connected', False)), "username": active_username})
-
-
-@app.post("/speak")
-async def speak(request: dict):
-    text = str(request.get("text", "")).strip()
-    if not text:
-        return JSONResponse({"error": "Seslendirilecek metin boş."}, status_code=400)
-    if len(text) > 500:
-        return JSONResponse({"error": "Seslendirme metni 500 karakteri aşamaz."}, status_code=413)
-
+def get_local_ip():
     try:
-        audio = await asyncio.wait_for(synthesize_turkish(text), timeout=25)
-        return Response(content=audio, media_type="audio/mpeg", headers={"Cache-Control": "no-store"})
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
     except Exception:
-        logger.exception("Turkish neural speech synthesis failed")
-        return JSONResponse({"error": "Türkçe ses üretilemedi. Sunucu loglarını kontrol edin."}, status_code=503)
+        return "127.0.0.1"
 
+class OverlayServer:
+    def __init__(self, orchestrator=None):
+        self.orchestrator = orchestrator
+        self.app = web.Application()
+        self.websockets = set()
+        self.base_dir = Path(__file__).resolve().parent / "web_overlay"
+        self._setup_routes()
 
-async def start_tiktok(username: str) -> None:
-    global active_client, active_username, client_task
+    def set_orchestrator(self, orchestrator):
+        self.orchestrator = orchestrator
 
-    async with client_lock:
-        if active_client is not None and active_username == username and client_task and not client_task.done():
-            await broadcast({"type": "status", "text": "● TIKTOK BAĞLANTISI ZATEN AÇIK"})
+    def _setup_routes(self):
+        self.app.router.add_get("/ws", self.websocket_handler)
+        self.app.router.add_get("/api/status", self.api_status)
+        self.app.router.add_post("/api/test_comment", self.api_test_comment)
+        self.app.router.add_post("/api/test_gift", self.api_test_gift)
+        self.app.router.add_post("/api/set_voice_provider", self.api_set_voice_provider)
+        self.app.router.add_post("/api/update_tiktok_user", self.api_update_tiktok_user)
+        self.app.router.add_post("/api/toggle_tiktok", self.api_toggle_tiktok)
+        
+        self.app.router.add_static("/audio", Config.AUDIO_DIR)
+        self.app.router.add_static("/", self.base_dir)
+
+    async def api_status(self, request):
+        if not self.orchestrator:
+            return web.json_response({"status": "ready", "queue_size": 0, "tiktok_connected": False})
+        
+        local_ip = get_local_ip()
+        pub_url = getattr(self.orchestrator, 'public_url', None)
+        return web.json_response({
+            "status": "running" if self.orchestrator.is_running else "stopped",
+            "tiktok_user": Config.TIKTOK_USERNAME,
+            "tiktok_connected": self.orchestrator.tiktok.is_running,
+            "voice_provider": Config.TTS_PROVIDER,
+            "queue_size": self.orchestrator.queue_mgr.get_queue_size(),
+            "active_user": self.orchestrator.queue_mgr.current_reading.username if self.orchestrator.queue_mgr.current_reading else None,
+            "local_ip": local_ip,
+            "local_mobile_url": f"http://{local_ip}:{Config.SERVER_PORT}/index.html",
+            "public_mobile_url": f"{pub_url}/index.html" if pub_url else None
+        })
+
+    async def api_set_voice_provider(self, request):
+        try:
+            data = await request.json()
+            provider = data.get("provider", "video_voice").lower()
+            Config.TTS_PROVIDER = provider
+            if self.orchestrator:
+                self.orchestrator.voice.provider = provider
+            print(f"[OverlayServer] Ses motoru değiştirildi: {provider.upper()}")
+            return web.json_response({"success": True, "provider": provider})
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=400)
+
+    async def api_test_comment(self, request):
+        if not self.orchestrator:
+            return web.json_response({"error": "Orchestrator bağlı değil"}, status=500)
+        
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+
+        username = data.get("username", "test_izleyici")
+        question = data.get("question", "Eski sevgilim geri dönecek mi?")
+
+        await self.orchestrator.queue_mgr.add_request(
+            username=username,
+            question=question,
+            tier=TIER_FREE
+        )
+        return web.json_response({"success": True, "message": f"@{username} normal yorumu kuyruğa eklendi."})
+
+    async def api_test_gift(self, request):
+        if not self.orchestrator:
+            return web.json_response({"error": "Orchestrator bağlı değil"}, status=500)
+        
+        try:
+            data = await request.json()
+        except Exception:
+            data = {}
+
+        username = data.get("username", "Canli_Izleyici")
+        tier = data.get("tier", TIER_DONAT)
+        question = data.get("question", "Aşk ve gelecek durumu")
+        coins = int(data.get("coins", 0))
+
+        await self.orchestrator.queue_mgr.add_request(
+            username=username,
+            question=question,
+            tier=tier,
+            gift_coins=coins
+        )
+        return web.json_response({"success": True, "message": f"🎁 @{username} ({tier.upper()}) sıraya eklendi!"})
+
+    async def api_update_tiktok_user(self, request):
+        try:
+            data = await request.json()
+            new_user = data.get("username", "").strip().lstrip("@")
+            if new_user:
+                Config.TIKTOK_USERNAME = new_user
+                # .env dosyasına kalıcı olarak kaydet
+                env_file = Path(__file__).resolve().parent / ".env"
+                if env_file.exists():
+                    try:
+                        lines = env_file.read_text(encoding="utf-8").splitlines()
+                        new_lines = []
+                        found = False
+                        for l in lines:
+                            if l.startswith("TIKTOK_USERNAME="):
+                                new_lines.append(f"TIKTOK_USERNAME={new_user}")
+                                found = True
+                            else:
+                                new_lines.append(l)
+                        if not found:
+                            new_lines.append(f"TIKTOK_USERNAME={new_user}")
+                        env_file.write_text("\n".join(new_lines), encoding="utf-8")
+                    except Exception as env_err:
+                        print(f"[Server] .env yazma hatası: {env_err}")
+
+                if self.orchestrator:
+                    await self.orchestrator.tiktok.stop()
+                    self.orchestrator.tiktok.username = new_user
+                    asyncio.create_task(self.orchestrator.tiktok.start())
+                print(f"[Server] Hedef TikTok hesabı güncellendi: @{new_user}")
+                return web.json_response({"success": True, "username": new_user})
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=400)
+        return web.json_response({"error": "Geçersiz kullanıcı adı"}, status=400)
+
+    async def api_toggle_tiktok(self, request):
+        if not self.orchestrator:
+            return web.json_response({"error": "Orchestrator hazır değil"}, status=500)
+        
+        if self.orchestrator.tiktok.is_running:
+            await self.orchestrator.tiktok.stop()
+            return web.json_response({"running": False, "message": "TikTok dinleme durduruldu."})
+        else:
+            asyncio.create_task(self.orchestrator.tiktok.start())
+            return web.json_response({"running": True, "message": "TikTok dinleme başlatıldı."})
+
+    async def websocket_handler(self, request):
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        self.websockets.add(ws)
+
+        try:
+            async for msg in ws:
+                if msg.type == web.WSMsgType.TEXT:
+                    try:
+                        data = json.loads(msg.data)
+                        if data.get("type") == "READING_FINISHED" and self.orchestrator:
+                            self.orchestrator.on_reading_finished()
+                    except Exception:
+                        pass
+        finally:
+            self.websockets.remove(ws)
+
+        return ws
+
+    async def broadcast(self, event_type: str, data: dict):
+        if not self.websockets:
             return
+            
+        message = json.dumps({"type": event_type, "data": data}, ensure_ascii=False)
+        tasks = [ws.send_str(message) for ws in self.websockets if not ws.closed]
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
-        if active_client is not None:
-            try:
-                await active_client.stop()
-            except Exception:
-                logger.exception("Previous TikTok client stop failed")
-            active_client = None
-            active_username = None
+    async def start(self):
+        runner = web.AppRunner(self.app)
+        await runner.setup()
+        site = web.TCPSite(runner, Config.SERVER_HOST, Config.SERVER_PORT)
+        await site.start()
+        print(f"[OverlayServer] Almina Tarot yayını hazır: http://{Config.SERVER_HOST}:{Config.SERVER_PORT}/index.html")
 
-        client = TikTokLiveClient(unique_id=username)
-        active_client = client
-        active_username = username
+if __name__ == "__main__":
+    from run import main
+    main()
 
-        @client.on(ConnectEvent)
-        async def on_connect(event: ConnectEvent):
-            logger.info("TikTok connected: @%s", username)
-            await broadcast({"type": "connected", "username": username})
-
-        @client.on(DisconnectEvent)
-        async def on_disconnect(event: DisconnectEvent):
-            logger.info("TikTok disconnected: @%s", username)
-            await broadcast({"type": "status", "text": "● TIKTOK BAĞLANTISI KESİLDİ"})
-
-        @client.on(CommentEvent)
-        async def on_comment(event: CommentEvent):
-            user = getattr(event.user, "nickname", None) or getattr(event.user, "unique_id", "İzleyici")
-            await broadcast({"type": "comment", "user": str(user), "text": str(event.comment)})
-
-        @client.on(LikeEvent)
-        async def on_like(event: LikeEvent):
-            # TikTok may batch multiple likes into one event; use its count field.
-            count = int(getattr(event, "count", 1) or 1)
-            await broadcast({"type": "like", "count": count})
-
-        @client.on(GiftEvent)
-        async def on_gift(event: GiftEvent):
-            # Ignore intermediate frames of streakable gifts; count the completed streak once.
-            gift = getattr(event, "gift", None)
-            if gift is None:
-                return
-            gift_type = getattr(gift, "type", None)
-            streaking = bool(getattr(event, "streaking", False))
-            if gift_type == 1 and streaking:
-                return
-            user = getattr(event.user, "nickname", None) or getattr(event.user, "unique_id", "İzleyici")
-            gift_name = getattr(gift, "name", None) or "Hediye"
-            diamonds = int(getattr(gift, "diamond_count", 0) or 0)
-            await broadcast({"type": "gift", "user": str(user), "gift": str(gift_name), "diamonds": diamonds})
-
-        await broadcast({"type": "status", "text": "● TIKTOK'A BAĞLANILIYOR"})
-
-        async def runner():
-            try:
-                await client.start()
-            except Exception as exc:
-                logger.exception("TikTok connection failed")
-                await broadcast({"type": "status", "text": "● TIKTOK BAĞLANTISI KURULAMADI"})
-                await broadcast({"type": "error", "message": str(exc)[:240]})
-
-        client_task = asyncio.create_task(runner())
-
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    origin = websocket.headers.get("origin")
-    if origin and origin not in ALLOWED_ORIGINS:
-        await websocket.close(code=1008)
-        return
-
-    await websocket.accept()
-    connected_sockets.add(websocket)
-    await websocket.send_text(json.dumps({"type": "status", "text": "● SUNUCUYA BAĞLANDI"}, ensure_ascii=False))
-
-    try:
-        while True:
-            raw = await websocket.receive_text()
-            try:
-                data = json.loads(raw)
-            except json.JSONDecodeError:
-                continue
-
-            if data.get("type") == "connect":
-                username = str(data.get("username", "")).strip().lstrip("@").replace(" ", "")
-                if not username or len(username) > 50:
-                    await websocket.send_text(json.dumps({"type": "error", "message": "Geçerli bir TikTok kullanıcı adı gir."}, ensure_ascii=False))
-                    continue
-                await start_tiktok(username)
-            elif data.get("type") == "ping":
-                await websocket.send_text(json.dumps({"type": "pong"}))
-    except WebSocketDisconnect:
-        connected_sockets.discard(websocket)
-    except Exception:
-        connected_sockets.discard(websocket)
-        logger.exception("Browser WebSocket error")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    global active_client
-    if active_client is not None:
-        try:
-            await active_client.stop()
-        except Exception:
-            logger.exception("TikTok client shutdown failed")
