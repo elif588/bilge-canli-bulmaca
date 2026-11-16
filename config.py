@@ -31,8 +31,8 @@ class Config:
     USER_COOLDOWN_SECONDS = int(os.getenv("USER_COOLDOWN_SECONDS", "120"))
     
     # Server
-    SERVER_HOST = os.getenv("SERVER_HOST", "0.0.0.0")
-    SERVER_PORT = int(os.getenv("PORT", os.getenv("SERVER_PORT", "8765")))
+    SERVER_HOST = "0.0.0.0"
+    SERVER_PORT = int(os.getenv("PORT") or os.getenv("SERVER_PORT") or 8765)
     
     # Directories
     AUDIO_DIR = BASE_DIR / "web_overlay" / "audio"

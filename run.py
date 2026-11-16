@@ -153,7 +153,11 @@ class AlminaTarotOrchestrator:
                 await asyncio.sleep(1)
 
     async def start(self):
-        await self.start_tunnel()
+        # 1. Web sunucusunu anında başlat (Render/Bulut port kontrolünün anında geçmesi için)
+        await self.server.start()
+        
+        # 2. Opsiyonel yerel tünel (arka planda çalışsın, sunucu açılışını geciktirmesin)
+        asyncio.create_task(self.start_tunnel())
         local_ip = get_local_ip()
 
         print("=======================================================")
@@ -168,7 +172,6 @@ class AlminaTarotOrchestrator:
             print(f"🌐 Telefon/Tablet (İnternet PWA Linki): {self.public_url}/index.html")
         print("=======================================================\n")
 
-        await self.server.start()
         worker_task = asyncio.create_task(self.worker_loop())
         tiktok_task = asyncio.create_task(self.tiktok.start())
 
