@@ -31,6 +31,8 @@ class OverlayServer:
         self.orchestrator = orchestrator
 
     def _setup_routes(self):
+        self.app.router.add_get("/", self.index_handler)
+        self.app.router.add_get("/healthz", self.health_check)
         self.app.router.add_get("/ws", self.websocket_handler)
         self.app.router.add_get("/api/status", self.api_status)
         self.app.router.add_post("/api/test_comment", self.api_test_comment)
@@ -41,6 +43,12 @@ class OverlayServer:
         
         self.app.router.add_static("/audio", Config.AUDIO_DIR)
         self.app.router.add_static("/", self.base_dir)
+
+    async def index_handler(self, request):
+        return web.FileResponse(self.base_dir / "index.html")
+
+    async def health_check(self, request):
+        return web.Response(text="OK", status=200)
 
     async def api_status(self, request):
         if not self.orchestrator:
