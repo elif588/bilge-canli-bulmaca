@@ -246,6 +246,19 @@
       </div>
     </div>
 
+    <!-- EulerStream API Anahtarı (Canlı Yayına Kesintisiz Bağlantı) -->
+    <div class="card" style="border: 1px solid #ffd700; background: linear-gradient(135deg, #1b0e38, #0d061c);">
+      <div class="card-title" style="color: #ffd700;">🔑 EULERSTREAM API ANAHTARI (CANLI YAYINDA HEDİYE VE YORUM YAKALAMA)</div>
+      <div style="font-size: 12px; color: #dcd0f0; line-height: 1.5; margin-bottom: 8px;">
+        TikTok canlı yayındaki hediyelerin ve chat yorumlarının yakalanabilmesi için EulerStream imza sunucusu kullanılır.<br>
+        Kota beklemeden anında bağlanmak için: <a href="https://www.eulerstream.com/pricing" target="_blank" style="color: #00f5d4; font-weight: bold; text-decoration: underline;">Buraya tıklayıp 30 saniyede ücretsiz anahtar alabilirsiniz.</a>
+      </div>
+      <div class="form-group">
+        <input type="text" id="eulerApiKey" placeholder="EulerStream API Key yapıştırın..." style="border-color: #ffd700;">
+        <button class="btn-obs" onclick="saveEulerKey()">💾 Anahtarı Kaydet ve Bağlan</button>
+      </div>
+    </div>
+
     <!-- Canlı İşlem Günlüğü -->
     <div class="card">
       <div class="card-title">📜 CANLI İŞLEM GÜNLÜĞÜ (LOG)</div>
@@ -316,6 +329,25 @@
       const data = await res.json();
       if (data.success) {
         log(`✅ Hedef hesap @${data.username} olarak ayarlandı.`);
+      } else {
+        log(`❌ Hata: ${data.error}`);
+      }
+      refreshStatus();
+    }
+
+    async function saveEulerKey() {
+      const key = document.getElementById('eulerApiKey').value.trim();
+      if (!key) return alert('Lütfen EulerStream API anahtarınızı yapıştırın.');
+
+      log('🔑 EulerStream API anahtarı kaydediliyor...');
+      const res = await fetch('/api/set_sign_key', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ key: key })
+      });
+      const data = await res.json();
+      if (data.success) {
+        log('✅ EulerStream anahtarı kaydedildi! Canlı yayına bağlanılıyor...');
       } else {
         log(`❌ Hata: ${data.error}`);
       }

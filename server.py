@@ -81,9 +81,20 @@ class OverlayServer:
             data = await request.json()
             key = data.get("key", "").strip()
             Config.SIGN_API_KEY = key
+            env_file = Path(__file__).resolve().parent / ".env"
+            if env_file.exists():
+                try:
+                    lines = env_file.read_text(encoding="utf-8").splitlines()
+                    new_lines = [l for l in lines if not l.startswith("SIGN_API_KEY=")]
+                    new_lines.append(f"SIGN_API_KEY={key}")
+                    env_file.write_text("\n".join(new_lines), encoding="utf-8")
+                except Exception:
+                    pass
+
             if self.orchestrator:
                 await self.orchestrator.tiktok.stop()
                 asyncio.create_task(self.orchestrator.tiktok.start())
+            print(f"[Server] EulerStream API anahtarı güncellendi.")
             return web.json_response({"success": True})
         except Exception as e:
             return web.json_response({"error": str(e)}, status=400)

@@ -19,14 +19,28 @@ body {
 .stream-container {
   width: 100vw;
   height: 100vh;
-  max-width: 576px;
   position: relative;
   overflow: hidden;
   background: #080312;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 0 80px rgba(0, 0, 0, 0.95);
+}
+
+/* Geniş monitörlerde (yatay) 9:16 telefon oranını koru; Tablet ve Telefon dikey modda TAM EKRAN yayıl */
+@media (min-aspect-ratio: 1/1) {
+  .stream-container {
+    max-width: min(576px, 56.25vh);
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.95);
+  }
+}
+
+@media (max-aspect-ratio: 1/1) {
+  .stream-container {
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+  }
 }
 
 /* 1. TAM EKRAN MİSTİK ALMİNA GÖRSELİ (SABİT, NET VE TİTREŞİMSİZ) */
